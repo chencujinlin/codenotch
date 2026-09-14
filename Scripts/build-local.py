@@ -78,6 +78,24 @@ let package = Package(name: "Codenotch", platforms: [.macOS(.v15)], targets: [
 ''')
 
 
+def bundle_notices(resources):
+    notices = resources / "Licenses"
+    notices.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(ROOT / "LICENSE", notices / "Codenotch-LICENSE.txt")
+    shutil.copy2(ROOT / "ATTRIBUTION.md", notices / "ATTRIBUTION.md")
+    shutil.copy2(ROOT / "Sources/Vendor/zstd/LICENSE", notices / "zstd-LICENSE.txt")
+    for dependency in ("Sparkle", "swift-atomics", "swift-collections", "swift-nio", "swift-system"):
+        checkout = WORK / ".build/checkouts" / dependency
+        files = [p for p in checkout.iterdir() if p.is_file()
+                 and p.name.upper().startswith(("LICENSE", "NOTICE", "COPYING"))]
+        if not any(p.name.upper().startswith("LICENSE") for p in files):
+            raise RuntimeError(f"Missing license for bundled dependency: {dependency}")
+        target = notices / dependency
+        target.mkdir(exist_ok=True)
+        for source in files:
+            shutil.copy2(source, target / source.name)
+
+
 def package():
     binary_dir = Path(subprocess.check_output(
         ["swift", "build", "--build-system", "native", "--package-path", str(WORK), "--show-bin-path"], text=True).strip())
@@ -121,6 +139,7 @@ def package():
     run("iconutil", "-c", "icns", str(iconset), "-o", str(contents / "Resources/AppIcon.icns"))
     info["CFBundleIconFile"] = "AppIcon"
     (contents / "Info.plist").write_bytes(plistlib.dumps(info))
+    bundle_notices(contents / "Resources")
     run("codesign", "--force", "--deep", "--sign", "-", str(app))
     run("codesign", "--verify", "--deep", "--strict", str(app))
     print(f"Built {app}")

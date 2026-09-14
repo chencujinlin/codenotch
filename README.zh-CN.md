@@ -1,11 +1,16 @@
 # Codenotch 中文定制版
 
-保留 Codenotch 的屏幕边缘刘海、额度圆环、动画和会话提醒，加入参考
+本仓库是 [Vinz 的 Codenotch](https://github.com/vinzdg/codenotch) 的**非官方衍生版**。
+原项目提供应用框架、屏幕边缘刘海、额度圆环、动画和会话提醒；本仓库新增简体中文，以及参考
 [Tokei](https://github.com/cclank/tokei) 统计口径的 **Claude Code / Codex 每日 Token 用量**。
+统计模块在本仓库用 Swift 实现，未打包 Tokei 采集器。
+
+原作者版权、MIT 许可证和 Git 历史均予以保留；新增代码沿用 MIT 许可证。
+详细关系见 [来源与致谢](ATTRIBUTION.md)。本版本由本仓库维护，不代表两个原项目的官方发行版。
 
 ## 使用
 
-1. 打开 `build/Codenotch.app`，点击刘海齿轮或按 `⌘,` 进入设置。
+1. 从[本仓库的 Releases](https://github.com/chencujinlin/codenotch/releases/latest) 下载 ZIP，解压后将 `Codenotch.app` 放入“应用程序”目录并打开。点击刘海齿轮或按 `⌘,` 进入设置。
 2. 在 **外观 → 语言 → 简体中文** 中选择中文，也可跟随系统。
 3. 打开 **Token 用量**：选择账户和日期，查看精确总量、非缓存输入、输出、缓存读取和缓存写入。
 4. 切换近 7 天／近 30 天查看趋势；点击日期查看当日明细，页面下方显示模型用量。

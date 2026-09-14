@@ -1,11 +1,25 @@
-[简体中文与每日 Token 统计](README.zh-CN.md)
+# Codenotch 中文定制版 / Chinese community edition
+
+本仓库是 [Vinz 的 Codenotch](https://github.com/vinzdg/codenotch) 的**非官方衍生版**，
+保留原项目的应用框架、刘海设计、动画及额度读取功能，新增简体中文和
+Claude Code / Codex 每日 Token 统计。原作者版权与 MIT 许可证保留在 [LICENSE](LICENSE)。
+统计口径参考 [Tokei](https://github.com/cclank/tokei)；本仓库使用自己的 Swift 统计实现，未打包其采集器。
+
+This community derivative builds on **Codenotch by Vinz and its contributors**.
+Our additions are Simplified Chinese localization and daily Claude Code / Codex
+token accounting, informed by Tokei's documented accounting rules. This edition
+is maintained separately and is not an official release of either project.
+Upstream Git history and copyright notices are preserved.
+
+[中文使用指南](README.zh-CN.md) · [来源与致谢 / Attribution](ATTRIBUTION.md) ·
+[下载本定制版 / Download this edition](https://github.com/chencujinlin/codenotch/releases/latest)
 
 <div align="center">
 
 ![Codenotch](docs/design/codenotch-banner.png)
 
-[![CI](https://github.com/vinzdg/codenotch/actions/workflows/ci.yml/badge.svg)](https://github.com/vinzdg/codenotch/actions/workflows/ci.yml)
-![Platform](https://img.shields.io/badge/platform-macOS%2026%2B-black)
+[![Upstream CI](https://github.com/vinzdg/codenotch/actions/workflows/ci.yml/badge.svg)](https://github.com/vinzdg/codenotch/actions/workflows/ci.yml)
+![Platform](https://img.shields.io/badge/platform-macOS%2015%2B-black)
 ![Swift](https://img.shields.io/badge/swift-5-orange)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
@@ -23,30 +37,18 @@ two never disagree.
 
 ## Download
 
-[![Download for macOS](docs/design/download-macos.svg)](../../releases/latest/download/Codenotch.dmg)
+[Download the Chinese community edition for macOS](https://github.com/chencujinlin/codenotch/releases/latest/download/Codenotch-macOS-arm64.zip)
 
-That button is the disk image itself, not the page it sits on — the asset is
-named `Codenotch.dmg` in every release, so `releases/latest/download/` always
-resolves to the newest one and the link never needs updating. Signed,
-notarized, and updating itself from then on. Take this one unless you have a
-reason not to; the [release page](../../releases/latest) has the notes.
+Unzip and move `Codenotch.app` to Applications. This download supports Apple
+Silicon and macOS 15 or later. It is ad-hoc signed, is not notarized, and has
+upstream automatic updates disabled so they cannot replace the custom features.
+See our [release notes](https://github.com/chencujinlin/codenotch/releases/latest).
 
-To try unreleased `main` without an Xcode install, the [preview
-build](../../releases/tag/preview) is rebuilt from every commit, and the
-Package workflow keeps a per-commit disk image on each of its
-[runs](../../actions/workflows/package.yml). Neither is notarized — they are
-ad-hoc signed, because the Developer ID certificate exists on one machine — so
-macOS quarantines the download. Clear the flag once, after dragging the app to
-Applications:
-
-```sh
-xattr -dr com.apple.quarantine /Applications/Codenotch.app
-```
-
-If macOS says the app is *damaged*, that is the quarantine flag rather than a bad download — run the command above.
-
-Universal binary. macOS 15 or later. To build and install a copy from source
-instead, see [Building](#building).
+For releases maintained by the original author, visit
+[vinzdg/codenotch Releases](https://github.com/vinzdg/codenotch/releases).
+The sections below describe the inherited application; the custom daily Token
+feature is documented in the [Chinese guide](README.zh-CN.md) and
+[accounting notes](docs/daily-token-usage.md).
 
 ## Windows
 
@@ -265,12 +267,21 @@ The app itself can show a Dock icon, a menu bar icon, or neither.
 
 ## Updates
 
-Codenotch updates itself. [Sparkle](https://sparkle-project.org) checks daily
-and installs in the background without prompting; Settings says so and can
-switch it off. Every update is EdDSA-signed, so nothing installs that wasn't
-built and signed by the maintainer.
+The community package built by `Scripts/build-local.py` disables upstream
+automatic updates. Download updates from this repository's Releases page.
+The original Codenotch uses [Sparkle](https://sparkle-project.org) and the
+upstream maintainer's signed update feed.
 
 ## Building
+
+For this community package using Command Line Tools:
+
+```sh
+python3 Scripts/build-local.py               # build/Codenotch.app
+python3 Scripts/build-local.py --tokens-only # standalone accounting tests
+```
+
+For the inherited workflow using full Xcode:
 
 ```sh
 brew install xcodegen   # once
