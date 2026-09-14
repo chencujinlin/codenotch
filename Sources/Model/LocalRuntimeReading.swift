@@ -42,14 +42,14 @@ struct LocalRuntimeReading: Equatable {
         }
 
         var memoryLabel: String {
-            if memoryKind == .modelSize { return "Model size" }
-            guard let gpuMemoryBytes else { return "Memory" }
+            if memoryKind == .modelSize { return L10n.t("Model size") }
+            guard let gpuMemoryBytes else { return L10n.t("Memory") }
             return gpuMemoryBytes > 0 ? "VRAM" : "RAM"
         }
 
         func unloadText(now: Date) -> String {
-            guard let expiresAt else { return "Unavailable" }
-            guard expiresAt > now else { return "Pending" }
+            guard let expiresAt else { return L10n.t("Unavailable") }
+            guard expiresAt > now else { return L10n.t("Pending") }
             let formatter = RelativeDateTimeFormatter()
             formatter.unitsStyle = .abbreviated
             return formatter.localizedString(for: expiresAt, relativeTo: now)

@@ -395,7 +395,7 @@ struct ProviderSnapshot: Identifiable, Equatable {
                 return localRuntime.models.isEmpty ? localRuntime.summary : nil
             }
             if case .error(let why) = status { return why }
-            return "Connecting to \(displayName)…"
+            return L10n.t("Connecting to \(displayName)…")
         }
         if hasReading { return nil }
         let locale = L10n.locale

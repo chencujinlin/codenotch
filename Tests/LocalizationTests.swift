@@ -15,6 +15,13 @@ final class LocalizationTests: XCTestCase {
     private let now = Date(timeIntervalSince1970: 1_787_900_000)
     private let resetNow = Date(timeIntervalSince1970: 1_700_000_000)
 
+    func testChineseThresholdAlertPreservesInterpolationTypes() {
+        XCTAssertEqual(L10n.t("\(80)% of its \("每周") limit used.", locale: zhHans),
+                       "已用 80%（每周额度）。")
+        XCTAssertEqual(L10n.t("Token usage", locale: zhHans), "Token 用量")
+        XCTAssertEqual(L10n.t("Cache reads", locale: zhHans), "缓存读取")
+    }
+
     // MARK: - ElapsedCopy
 
     func testElapsedCopyInSimplifiedChinese() {

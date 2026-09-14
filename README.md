@@ -1,3 +1,5 @@
+[简体中文与每日 Token 统计](README.zh-CN.md)
+
 <div align="center">
 
 ![Codenotch](docs/design/codenotch-banner.png)

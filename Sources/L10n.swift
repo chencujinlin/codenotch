@@ -8,7 +8,15 @@ import Foundation
 enum L10n {
     private final class Token {}
 
-    static var bundle: Bundle { Bundle(for: Token.self) }
+    static var bundle: Bundle {
+        #if SWIFT_PACKAGE
+        if let url = Bundle.main.url(forResource: "Codenotch_Codenotch", withExtension: "bundle"),
+           let bundle = Bundle(url: url) { return bundle }
+        return Bundle.module
+        #else
+        return Bundle(for: Token.self)
+        #endif
+    }
 
     /// Posted after `apply` so windows can rebuild copy. A notification
     /// rather than an observable object because `t` is called off the main

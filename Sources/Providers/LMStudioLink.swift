@@ -166,8 +166,8 @@ enum LMStudioLinkError: LocalizedError, Equatable {
         switch self {
         case .unauthorized(let why): return why ?? LMStudioError.needsToken.errorDescription
         case .remote(let why):       return why
-        case .badFrame:              return "LM Studio sent a frame this version does not understand."
-        case .timedOut:              return "LM Studio did not answer in time."
+        case .badFrame:              return L10n.t("LM Studio sent a frame this version does not understand.")
+        case .timedOut:              return L10n.t("LM Studio did not answer in time.")
         }
     }
 }

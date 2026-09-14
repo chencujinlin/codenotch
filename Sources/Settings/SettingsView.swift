@@ -26,7 +26,7 @@ extension View {
 /// crossing-and-notification machinery it switches is Notifications' to
 /// explain.
 private enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
-    case accounts, phone, deepseek, ollama, lmstudio, appearance, notifications, general
+    case accounts, tokens, phone, deepseek, ollama, lmstudio, appearance, notifications, general
 
     /// The sections the sidebar lists; Phone only once pairing is offered.
     static var visible: [SettingsSection] {
@@ -38,6 +38,7 @@ private enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
     var title: String {
         switch self {
         case .accounts:      return L10n.t("Accounts")
+        case .tokens:        return L10n.t("Token usage")
         case .phone:         return L10n.t("Phone")
         case .deepseek:      return "DeepSeek"
         case .ollama:        return "Ollama"   // a product name, the same in every language
@@ -51,6 +52,7 @@ private enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
     var icon: String {
         switch self {
         case .accounts:      return "person.crop.circle.fill"
+        case .tokens:        return "chart.bar.xaxis"
         case .phone:         return "iphone"
         case .deepseek:      return "chart.line.uptrend.xyaxis"
         case .ollama:        return "desktopcomputer"
@@ -67,6 +69,7 @@ private enum SettingsSection: String, CaseIterable, Identifiable, Hashable {
     var tint: Color {
         switch self {
         case .accounts:      return .blue
+        case .tokens:        return .cyan
         case .phone:         return .green
         case .deepseek:      return .orange
         case .ollama:        return .teal
@@ -464,6 +467,7 @@ struct SettingsView: View {
     private func paneContent(for section: SettingsSection) -> some View {
         switch section {
         case .accounts:      accountsPane
+        case .tokens:        DailyTokensView()
         case .phone:         phonePane
         case .deepseek:      DeepSeekPricingSettingsView(preferences: preferences)
         case .ollama:
@@ -478,7 +482,7 @@ struct SettingsView: View {
         case .lmstudio:
             if let usageStore {
                 Form {
-                    Section("Connection") {
+                    Section(L10n.t("Connection")) {
                         LMStudioSettingsRow(preferences: preferences, store: usageStore, metrics: lmstudioMetrics)
                     }
                 }
@@ -938,6 +942,7 @@ struct SettingsView: View {
                     get: { updater.automatic },
                     set: { updater.automatic = $0 }
                 ))
+                .disabled(updater.isLocalBuild)
 
                 HStack(alignment: .firstTextBaseline, spacing: 10) {
                     // Disclosed rather than merely silent. An app that updates
@@ -946,12 +951,15 @@ struct SettingsView: View {
                     // a way to switch it off, is the difference between a
                     // background updater and something that looks like it is
                     // hiding.
-                    Text(L10n.t("Version \(updater.currentVersion). Updates install in the background and apply next time Codenotch starts."))
+                    Text(updater.isLocalBuild
+                         ? L10n.t("Local build: automatic updates are disabled to preserve your custom features.")
+                         : L10n.t("Version \(updater.currentVersion). Updates install in the background and apply next time Codenotch starts."))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .fixedSize(horizontal: false, vertical: true)
                     Spacer(minLength: 0)
                     Button(L10n.t("Check now")) { updater.checkNow() }
+                        .disabled(updater.isLocalBuild)
                         .controlSize(.small)
                 }
 
@@ -1867,7 +1875,7 @@ extension SettingsView {
         if let pairing = phoneLinkPairing, let registry = phoneLinkRegistry, let status = phoneLinkServerStatus {
             PhoneSettingsPane(preferences: preferences, pairing: pairing, registry: registry, serverStatus: status)
         } else {
-            Text("Phone linking is not available.")
+            Text(L10n.t("Phone linking is not available."))
         }
     }
 }
@@ -1883,17 +1891,17 @@ struct PhoneSettingsPane: View {
     private func lastSeenText(for device: PairedDevice) -> String {
         let diff = Date().timeIntervalSince(device.lastSeenAt)
         if diff < 60 {
-            return "Active now"
+            return L10n.t("Active now")
         }
         if device.lastSeenAt == device.pairedAt {
             let df = DateFormatter()
             df.dateStyle = .medium
             df.timeStyle = .none
-            return "Paired \(df.string(from: device.pairedAt))"
+            return L10n.t("Paired \(df.string(from: device.pairedAt))")
         }
         let rf = RelativeDateTimeFormatter()
         rf.unitsStyle = .full
-        return "Last seen \(rf.localizedString(for: device.lastSeenAt, relativeTo: Date()))"
+        return L10n.t("Last seen \(rf.localizedString(for: device.lastSeenAt, relativeTo: Date()))")
     }
     
     var body: some View {

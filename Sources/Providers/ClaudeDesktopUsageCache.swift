@@ -1,3 +1,6 @@
+#if SWIFT_PACKAGE
+import CZstd
+#endif
 import Foundation
 
 /// Claude's own limits, read out of Claude Desktop's HTTP cache.

@@ -249,9 +249,9 @@ enum GitHubCopilotUsage {
 
     private static func label(for id: String) -> String {
         switch id {
-        case "premium_interactions": return "Premium requests"
-        case "chat":                return "Chat requests"
-        case "completions":         return "Completions"
+        case "premium_interactions": return L10n.t("Premium requests")
+        case "chat":                return L10n.t("Chat requests")
+        case "completions":         return L10n.t("Completions")
         default:
             return id.replacingOccurrences(of: "_", with: " ").capitalized
         }

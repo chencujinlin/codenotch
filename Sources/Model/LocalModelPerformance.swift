@@ -53,10 +53,10 @@ struct LocalModelPerformance: Equatable {
 
         var label: String {
             switch self {
-            case .veryFast: return "Very fast"
-            case .smooth: return "Smooth"
-            case .slow: return "Slow"
-            case .verySlow: return "Very slow"
+            case .veryFast: return L10n.t("Very fast")
+            case .smooth: return L10n.t("Smooth")
+            case .slow: return L10n.t("Slow")
+            case .verySlow: return L10n.t("Very slow")
             }
         }
         var color: Color {
