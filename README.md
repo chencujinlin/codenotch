@@ -27,7 +27,9 @@ Upstream Git history and copyright notices are preserved.
 of each coding assistant's usage limit you have burned — and whether it is
 still working, done, or waiting on you.**
 
-![Collapsed notch with hover tooltip](docs/design/frame-124-hover-tooltip.png)
+![Grok hover tooltip with weekly quota, daily Token breakdown and 30-day trend](docs/design/grok-daily-token-tooltip.png)
+
+Grok 实机截图（当前源码构建）：每周额度、今日 Token 明细、昨日用量与近 30 天趋势。
 
 </div>
 
