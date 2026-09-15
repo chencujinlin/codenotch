@@ -857,6 +857,70 @@ private struct CodexUsageSection: View {
     }
 }
 
+/// Local Grok consumption is independent of billing authentication. Read only
+/// Grok's log while its tooltip is mounted, using the settings page's parser.
+private struct GrokDailyUsageSection: View {
+    let now: Date
+    @StateObject private var store = DailyTokenStore(
+        sources: DailyTokenStore.localSources().filter { $0.kind == .grok }
+    )
+
+    private var calendar: Calendar { store.report?.calendar ?? .current }
+    private var hasHistory: Bool { store.report?.sources.contains { $0.eventCount > 0 } == true }
+    private var today: TokenCounts { store.report?.totals(on: now) ?? TokenCounts() }
+    private var yesterday: TokenCounts {
+        guard let date = calendar.date(byAdding: .day, value: -1, to: now) else { return TokenCounts() }
+        return store.report?.totals(on: date) ?? TokenCounts()
+    }
+    private var buckets: [CodexTokenUsage.DailyBucket] {
+        let start = calendar.startOfDay(for: now)
+        return (0..<30).reversed().compactMap { offset in
+            guard let date = calendar.date(byAdding: .day, value: -offset, to: start) else { return nil }
+            return .init(startDate: String(date.timeIntervalSince1970),
+                         tokens: store.report?.totals(on: date).total ?? 0)
+        }
+    }
+    private var status: String {
+        guard let report = store.report else { return L10n.t("Loading…") }
+        if report.sources.contains(where: { $0.incomplete || $0.unreadableFiles > 0 }) {
+            return L10n.t("Partial history")
+        }
+        return hasHistory ? L10n.t("This Mac") : L10n.t("No records")
+    }
+    private func tokens(_ value: Int) -> String {
+        hasHistory ? value.formatted(.number.locale(L10n.locale)) : "—"
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            Rectangle().fill(Palette.ringTrack)
+                .frame(height: NotchLayout.hairline)
+                .padding(.top, NotchLayout.codexUsageTop)
+            VStack(alignment: .leading, spacing: NotchLayout.codexUsageRowGap) {
+                SplitRow(leading: L10n.t("Local token usage"), trailing: status)
+                SplitRow(leading: L10n.t("Today"), trailing: tokens(today.total))
+                SplitRow(leading: L10n.t("Uncached input"), trailing: tokens(today.input))
+                SplitRow(leading: L10n.t("Output"), trailing: tokens(today.output))
+                SplitRow(leading: L10n.t("Cache reads"), trailing: tokens(today.cacheRead))
+                SplitRow(leading: L10n.t("Reasoning (in output)"), trailing: tokens(today.reasoning))
+                SplitRow(leading: L10n.t("Yesterday"), trailing: tokens(yesterday.total))
+                SplitRow(leading: L10n.t("30-day tokens"), trailing: tokens(buckets.reduce(0) { $0 + $1.tokens }))
+            }
+            .padding(.top, NotchLayout.blockSpacing)
+            CodexDailyUsageChart(buckets: buckets, maximum: max(1, buckets.map(\.tokens).max() ?? 0))
+                .padding(.top, NotchLayout.codexChartTop)
+                .accessibilityLabel(L10n.t("Last 30 days"))
+        }
+        .task {
+            await store.refresh()
+            while !Task.isCancelled {
+                do { try await Task.sleep(for: .seconds(30)) } catch { break }
+                await store.refresh()
+            }
+        }
+    }
+}
+
 /// The line that says you are stopped.
 ///
 /// Deliberately loud where the rest of the card is quiet: it is the one thing
@@ -1023,6 +1087,7 @@ struct TooltipCard: View {
             statusMessage: snapshot.statusMessage,
             blockMessage: snapshot.block?.summary(now: now),
             hasTokenUsage: snapshot.tokenUsage != nil,
+                hasGrokDailyTokens: snapshot.id == "grok",
             hasPlan: snapshot.plan != nil,
             hasResetCredits: snapshot.resetCredits != nil,
             localModelName: snapshot.localModel?.name,
@@ -1048,6 +1113,9 @@ struct TooltipCard: View {
                     }
                     if let tokenUsage = snapshot.tokenUsage {
                         CodexUsageSection(usage: tokenUsage, now: now)
+                    }
+                    if snapshot.id == "grok" {
+                        GrokDailyUsageSection(now: now)
                     }
                     if let usageDetail = snapshot.usageDetail, usageDetail.hasUsage {
                         DeepSeekUsageDetail(detail: usageDetail, now: now,

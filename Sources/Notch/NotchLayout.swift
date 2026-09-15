@@ -175,6 +175,12 @@ enum NotchLayout {
     static let codexUsageRowGap = Design.px(12)
     static let codexChartTop   = Design.px(15)
     static let codexChartHeight = Design.px(115)
+    /// Eight single-line rows and a chart, including loading/empty states.
+    static var grokDailyUsageHeight: CGFloat {
+        codexUsageTop + hairline + blockSpacing
+            + 8 * cardBodyLineHeight + 7 * codexUsageRowGap
+            + codexChartTop + codexChartHeight
+    }
     /// Title, count, and expiry. The third line is reserved so a missing
     /// expiry cannot shrink the hover region under the card.
     static var codexResetCreditsHeight: CGFloat {
@@ -338,6 +344,7 @@ enum NotchLayout {
                            statusMessage: String? = nil,
                            blockMessage: String? = nil,
                            hasTokenUsage: Bool = false,
+                           hasGrokDailyTokens: Bool = false,
                            hasPlan: Bool = false,
                            hasResetCredits: Bool = false,
                            localModelName: String? = nil, showsLocalPerformance: Bool = false,
@@ -408,6 +415,8 @@ enum NotchLayout {
                 + codexUsageRowGap
                 + codexChartTop + codexChartHeight
         }
+
+        if hasGrokDailyTokens { height += grokDailyUsageHeight }
 
         if sessionCount > 0 {
             let shown = min(sessionCount, max(0, sessionCap))
@@ -484,6 +493,7 @@ enum NotchLayout {
     static func sessionsFitting(cardBudget: CGFloat, windowCount: Int,
                                 groupCount: Int = 2,
                                 hasTokenUsage: Bool = false,
+                                hasGrokDailyTokens: Bool = false,
                                 hasPlan: Bool = false,
                                 hasResetCredits: Bool = false) -> Int {
         var fits = 0
@@ -493,7 +503,7 @@ enum NotchLayout {
             // bottom of the card.
             let height = cardHeight(windowCount: windowCount, groupCount: groupCount,
                                     sessionCount: n + 1, sessionCap: n,
-                                    hasTokenUsage: hasTokenUsage, hasPlan: hasPlan,
+                                    hasTokenUsage: hasTokenUsage, hasGrokDailyTokens: hasGrokDailyTokens, hasPlan: hasPlan,
                                     hasResetCredits: hasResetCredits)
             guard height <= cardBudget else { break }
             fits = n
@@ -516,11 +526,12 @@ enum NotchLayout {
     /// generous that the panel runs off the screen, which is what the cap is
     /// solved for.
     static func maxCardHeight(sessionCap: Int, hasTokenUsage: Bool = false,
+                              hasGrokDailyTokens: Bool = false,
                               hasPlan: Bool = false,
                               hasResetCredits: Bool = false) -> CGFloat {
         cardHeight(windowCount: maxWindowCount, groupCount: 2,
                    sessionCount: sessionCap + 1, sessionCap: sessionCap,
-                   hasTokenUsage: hasTokenUsage, hasPlan: hasPlan,
+                   hasTokenUsage: hasTokenUsage, hasGrokDailyTokens: hasGrokDailyTokens, hasPlan: hasPlan,
                    hasResetCredits: hasResetCredits)
     }
 

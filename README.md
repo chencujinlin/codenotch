@@ -2,11 +2,11 @@
 
 本仓库是 [Vinz 的 Codenotch](https://github.com/vinzdg/codenotch) 的**非官方衍生版**，
 保留原项目的应用框架、刘海设计、动画及额度读取功能，新增简体中文和
-Claude Code / Codex 每日 Token 统计。原作者版权与 MIT 许可证保留在 [LICENSE](LICENSE)。
+Claude Code / Codex / Grok 每日 Token 统计。原作者版权与 MIT 许可证保留在 [LICENSE](LICENSE)。
 统计口径参考 [Tokei](https://github.com/cclank/tokei)；本仓库使用自己的 Swift 统计实现，未打包其采集器。
 
 This community derivative builds on **Codenotch by Vinz and its contributors**.
-Our additions are Simplified Chinese localization and daily Claude Code / Codex
+Our additions are Simplified Chinese localization and daily Claude Code / Codex / Grok
 token accounting, informed by Tokei's documented accounting rules. This edition
 is maintained separately and is not an official release of either project.
 Upstream Git history and copyright notices are preserved.
@@ -46,6 +46,8 @@ See our [release notes](https://github.com/chencujinlin/codenotch/releases/lates
 
 For releases maintained by the original author, visit
 [vinzdg/codenotch Releases](https://github.com/vinzdg/codenotch/releases).
+The Grok ring tooltip also shows local daily Token details and a 30-day trend beneath the weekly quota.
+
 The sections below describe the inherited application; the custom daily Token
 feature is documented in the [Chinese guide](README.zh-CN.md) and
 [accounting notes](docs/daily-token-usage.md).

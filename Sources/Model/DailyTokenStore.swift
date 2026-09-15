@@ -47,6 +47,13 @@ final class DailyTokenStore: ObservableObject {
                                               kind: kind, directories: directories))
             }
         }
+        // GROK_HOME replaces the default root, matching Grok/Tokei. Session
+        // updates contain context/turn snapshots, so only scan the unified log.
+        let grokPath = environment["GROK_HOME"].flatMap { $0.isEmpty ? nil : $0 }
+        let grokRoot = (grokPath.map { URL(fileURLWithPath: NSString(string: $0).expandingTildeInPath) }
+            ?? home.appendingPathComponent(".grok")).resolvingSymlinksInPath().standardizedFileURL
+        sources.append(TokenLogSource(id: grokRoot.path, name: "Grok", kind: .grok,
+                                      directories: [grokRoot.appendingPathComponent("logs")]))
         return sources
     }
 }

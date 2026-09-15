@@ -1,10 +1,16 @@
 # Daily token usage
 
 The quota ring still displays provider limits. Settings → Token usage displays
-locally recorded consumption for Claude Code and Codex, independent of login
+locally recorded consumption for Claude Code, Codex and Grok Build, independent of login
 and quota availability. This is an implementation in Swift, informed by
 [Tokei's documented field mappings and replay cases](https://github.com/cclank/tokei/blob/main/CALCULATION.md).
 No Tokei collector is executed or bundled.
+
+The Grok ring tooltip also displays today's input/output/cache/reasoning, yesterday's
+total and the last 30 days' total and chart below the weekly quota. It scans only
+Grok logs while visible and refreshes every 30 seconds, independently of billing
+authentication. Loading, absent logs and partial history are labelled explicitly.
+The tooltip, hover area and session budget reserve space for these rows.
 
 ## Accounting
 
@@ -24,6 +30,24 @@ No Tokei collector is executed or bundled.
   counters and last response are discarded, including replays with new timestamps.
   Ancestry uses `forked_from_id` or `source.subagent.thread_spawn.parent_thread_id`.
   No timing heuristic discards independent requests with similar token counts.
+- Grok Build: read `${GROK_HOME:-~/.grok}/logs/unified.jsonl`, using only
+  `shell.turn.inference_done` records. Each is one model call, not a cumulative
+  session counter. Uncached input is `prompt_tokens - cached_prompt_tokens`;
+  cache reads are `cached_prompt_tokens`. Output is `completion_tokens`, with
+  `reasoning_tokens` shown as a subset of output. Thus the total matches Tokei's
+  uncached input + cache reads + non-reasoning output + reasoning, without
+  changing the existing output definition or adding reasoning twice. This log
+  format does not report cache writes, so that bucket contributes zero.
+- Grok calls use Tokei's identity tuple: session ID, original timestamp, loop
+  index, attempts and token counters. Identical copies count once; independent
+  calls with identical counts remain separate. Dates come from each call's `ts`.
+  `summary.json` supplies model/project labels through `sid`, never token totals
+  or dates. Without an event model, the label is the session's current model,
+  so historical model switches cannot be reconstructed precisely. Missing
+  summary metadata leaves the model unknown, without losing the call's tokens.
+- Grok context snapshots, `updates.jsonl` turn summaries and billing percentages
+  are not added to daily totals. Old inference events without token fields and
+  invalid counters produce the partial-history notice; no usage is invented.
 - Each event is grouped with the same local calendar used for queries. A refresh
   after a time-zone change rebuilds day boundaries from event timestamps.
 

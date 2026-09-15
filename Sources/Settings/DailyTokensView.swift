@@ -55,10 +55,14 @@ struct DailyTokensView: View {
                         breakdown
                     }
                     sourceStatus
-                    Text(L10n.t("Totals = uncached input + output + cache reads + cache writes. Codex reasoning is already included in output. Dates use this Mac's time zone."))
+                    Text(L10n.t("Totals = uncached input + output + cache reads + cache writes. Codex and Grok reasoning is already included in output. Dates use this Mac's time zone."))
                         .font(.caption).foregroundStyle(.secondary)
                     Text(L10n.t("Only locally recorded usage is included, including subagents and archived Codex sessions. Deleted logs, other devices and unrecorded usage cannot be recovered from quota percentages."))
                         .font(.caption).foregroundStyle(.secondary)
+                    if sources.contains(where: { $0.name == "Grok" }) {
+                        Text(L10n.t("Grok logs do not report cache writes. Grok totals include only reported tokens."))
+                            .font(.caption).foregroundStyle(.secondary)
+                    }
                     if let report = store.report {
                         Text(L10n.t("Updated \(report.updatedAt.formatted(.dateTime.hour().minute().second().locale(L10n.locale))) · refreshes every 30 seconds while open"))
                             .font(.caption2).foregroundStyle(.tertiary)
@@ -94,17 +98,22 @@ struct DailyTokensView: View {
                 metric(L10n.t("Uncached input"), counts(on: selectedDate).input)
                 metric(L10n.t("Output"), counts(on: selectedDate).output)
                 metric(L10n.t("Cache reads"), counts(on: selectedDate).cacheRead)
-                metric(L10n.t("Cache writes"), counts(on: selectedDate).cacheWrite)
+                metric(L10n.t("Cache writes"), counts(on: selectedDate).cacheWrite,
+                       available: !sources.allSatisfy { $0.name == "Grok" })
+                if sources.contains(where: { $0.name == "Grok" }) {
+                    metric(L10n.t("Grok reasoning (included in output)"), counts(on: selectedDate).reasoning,
+                           available: sources.contains { $0.name == "Grok" && $0.eventCount > 0 })
+                }
             }
         }
         .padding(16)
         .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 14))
     }
 
-    private func metric(_ title: String, _ value: Int) -> some View {
+    private func metric(_ title: String, _ value: Int, available: Bool = true) -> some View {
         VStack(alignment: .leading, spacing: 3) {
             Text(title).font(.caption).foregroundStyle(.secondary)
-            Text(hasHistory ? number(value) : "—").monospacedDigit()
+            Text(hasHistory && available ? number(value) : "—").monospacedDigit()
         }
     }
 

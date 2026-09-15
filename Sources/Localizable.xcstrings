@@ -18396,17 +18396,6 @@
         }
       }
     },
-    "Totals = uncached input + output + cache reads + cache writes. Codex reasoning is already included in output. Dates use this Mac's time zone.": {
-      "extractionState": "manual",
-      "localizations": {
-        "zh-Hans": {
-          "stringUnit": {
-            "state": "translated",
-            "value": "合计 = 非缓存输入 + 输出 + 缓存读取 + 缓存写入。Codex 的推理 Token 已包含在输出中。日期按这台 Mac 的时区统计。"
-          }
-        }
-      }
-    },
     "Only locally recorded usage is included, including subagents and archived Codex sessions. Deleted logs, other devices and unrecorded usage cannot be recovered from quota percentages.": {
       "extractionState": "manual",
       "localizations": {
@@ -20515,6 +20504,116 @@
           "stringUnit": {
             "state": "translated",
             "value": "代码补全"
+          }
+        }
+      }
+    },
+    "Totals = uncached input + output + cache reads + cache writes. Codex and Grok reasoning is already included in output. Dates use this Mac's time zone.": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "合计 = 非缓存输入 + 输出 + 缓存读取 + 缓存写入。Codex / Grok 的推理 Token 已包含在输出中。日期按这台 Mac 的时区统计。"
+          }
+        }
+      }
+    },
+    "Grok reasoning (included in output)": {
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grok 推理（已含在输出中）"
+          }
+        }
+      },
+      "extractionState": "manual"
+    },
+    "Grok logs do not report cache writes. Grok totals include only reported tokens.": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Grok 日志未提供缓存写入量，Grok 合计仅包含日志报告的 Token。"
+          }
+        }
+      }
+    },
+    "Local token usage": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本地 Token 用量"
+          }
+        }
+      }
+    },
+    "Reasoning (in output)": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "推理（已含在输出中）"
+          }
+        }
+      }
+    },
+    "Partial history": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "历史不完整"
+          }
+        }
+      }
+    },
+    "This Mac": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "本机记录"
+          }
+        }
+      }
+    },
+    "No records": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "无记录"
+          }
+        }
+      }
+    },
+    "Loading…": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "读取中…"
+          }
+        }
+      }
+    },
+    "Yesterday": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "昨天"
           }
         }
       }

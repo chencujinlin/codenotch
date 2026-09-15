@@ -18,7 +18,7 @@ attributed to their original authors. Our additions use the same MIT license.
 ## 本仓库的修改
 
 - 完善 macOS 简体中文界面。
-- 新增 Claude Code / Codex 每日 Token 明细、账户筛选、模型统计及 7／30 天趋势。
+- 新增 Claude Code / Codex / Grok 每日 Token 明细、账户筛选、模型统计及 7／30 天趋势。
 - 新增统计测试、中文文档和 Command Line Tools 本地构建脚本。
 - 本地发行包使用独立应用标识，停用上游自动更新。
 

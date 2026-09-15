@@ -7,12 +7,15 @@ struct TokenCounts: Equatable, Sendable {
     var output = 0
     var cacheRead = 0
     var cacheWrite = 0
+    /// Grok reasoning is a subset of output, not an additional total bucket.
+    var reasoning = 0
 
     var total: Int { input + output + cacheRead + cacheWrite }
 
     static func + (lhs: Self, rhs: Self) -> Self {
         Self(input: lhs.input + rhs.input, output: lhs.output + rhs.output,
-             cacheRead: lhs.cacheRead + rhs.cacheRead, cacheWrite: lhs.cacheWrite + rhs.cacheWrite)
+             cacheRead: lhs.cacheRead + rhs.cacheRead, cacheWrite: lhs.cacheWrite + rhs.cacheWrite,
+             reasoning: lhs.reasoning + rhs.reasoning)
     }
 }
 
@@ -25,11 +28,12 @@ struct TokenEvent: Equatable, Sendable {
     var messageID: String? = nil
     var sidechain = false
     var signature: String? = nil
+    var grokSessionID: String? = nil
 }
 
 /// Only usage metadata survives decoding. Conversation text is never retained.
 struct TokenLogParser {
-    enum Kind: String, Sendable { case claude, codex }
+    enum Kind: String, Sendable { case claude, codex, grok }
 
     private(set) var events: [String: TokenEvent] = [:]
     private(set) var incomplete = false
@@ -49,6 +53,7 @@ struct TokenLogParser {
         switch kind {
         case .claude: consumeClaude(json)
         case .codex: consumeCodex(json)
+        case .grok: consumeGrok(json)
         }
     }
 
@@ -81,6 +86,33 @@ struct TokenLogParser {
         if kind == .codex, read + write > input { return nil }
         return TokenCounts(input: kind == .codex ? input - read - write : input,
                            output: output, cacheRead: read, cacheWrite: write)
+    }
+
+    private mutating func consumeGrok(_ json: [String: Any]) {
+        guard json["msg"] as? String == "shell.turn.inference_done" else { return }
+        // Context snapshots and turn summaries are not per-call consumption.
+        // Older inference records without token fields cannot supply daily totals.
+        guard let usage = json["ctx"] as? [String: Any],
+              let sid = json["sid"] as? String, !sid.isEmpty,
+              let rawTime = json["ts"] as? String, let at = timestamp(rawTime),
+              let input = number(usage, "prompt_tokens"),
+              let output = number(usage, "completion_tokens")
+        else { incomplete = true; return }
+        for key in ["cached_prompt_tokens", "reasoning_tokens", "loop_index", "attempts"] where usage[key] != nil {
+            guard number(usage, key) != nil else { incomplete = true; return }
+        }
+        let read = number(usage, "cached_prompt_tokens") ?? 0
+        let reasoning = number(usage, "reasoning_tokens") ?? 0
+        guard read <= input, reasoning <= output else { incomplete = true; return }
+        let loop = number(usage, "loop_index") ?? 0
+        let attempts = number(usage, "attempts") ?? 0
+        // Tokei's call identity survives copied logs; equal counts from distinct
+        // sessions, timestamps or loop iterations are independent consumption.
+        let key = "grok:\(sid):\(rawTime):\(loop):\(attempts):\(input):\(read):\(output):\(reasoning)"
+        events[key] = TokenEvent(id: key, at: at,
+                                 counts: TokenCounts(input: input - read, output: output,
+                                                     cacheRead: read, reasoning: reasoning),
+                                 model: usage["model"] as? String ?? "", grokSessionID: sid)
     }
 
     private mutating func consumeClaude(_ json: [String: Any]) {
@@ -229,6 +261,7 @@ actor DailyTokenReader {
                     }
                 ) else { result.unreadableFiles += 1; continue }
                 for case let url as URL in enumerator where url.pathExtension == "jsonl" {
+                    if source.kind == .grok, url.lastPathComponent != "unified.jsonl" { continue }
                     let values = try? url.resourceValues(forKeys: [.isRegularFileKey, .isSymbolicLinkKey])
                     guard values?.isRegularFile == true, values?.isSymbolicLink != true else { continue }
                     seen.insert(url)
@@ -271,6 +304,17 @@ actor DailyTokenReader {
             }
             let mainMessages = Set(events.values.filter { !$0.sidechain }.compactMap(\.messageID))
             events = events.filter { !($0.value.sidechain && $0.value.messageID.map(mainMessages.contains) == true) }
+            if source.kind == .grok {
+                let metadata = grokMetadata(for: source)
+                events = events.mapValues { event in
+                    var event = event
+                    if let sid = event.grokSessionID, let info = metadata[sid] {
+                        if event.model.isEmpty { event.model = info.model }
+                        event.project = info.project
+                    }
+                    return event
+                }
+            }
             result.events = Array(events.values)
             result.eventCount = events.count
             for event in events.values {
@@ -281,6 +325,35 @@ actor DailyTokenReader {
         }
         cache = cache.filter { seen.contains($0.key) }
         return DailyTokenReport(sources: results, updatedAt: now, calendar: calendar)
+    }
+
+    /// Summary files only supply labels. Their context and lifetime counters
+    /// never contribute tokens or dates. Re-read labels even when logs are cached.
+    private func grokMetadata(for source: TokenLogSource) -> [String: (model: String, project: String)] {
+        var result: [String: (model: String, project: String)] = [:]
+        for logs in source.directories {
+            let root = logs.deletingLastPathComponent().appendingPathComponent("sessions")
+            guard let groups = try? FileManager.default.contentsOfDirectory(
+                at: root, includingPropertiesForKeys: nil, options: .skipsHiddenFiles
+            ) else { continue }
+            for group in groups {
+                guard let sessions = try? FileManager.default.contentsOfDirectory(
+                    at: group, includingPropertiesForKeys: nil, options: .skipsHiddenFiles
+                ) else { continue }
+                for session in sessions {
+                    let url = session.appendingPathComponent("summary.json")
+                    guard let data = try? Data(contentsOf: url),
+                          let summary = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
+                    else { continue }
+                    let info = summary["info"] as? [String: Any]
+                    let sid = info?["id"] as? String ?? session.lastPathComponent
+                    let path = group.lastPathComponent.removingPercentEncoding ?? ""
+                    result[sid] = (summary["current_model_id"] as? String ?? "",
+                                   path.hasPrefix("/") ? path : "")
+                }
+            }
+        }
+        return result
     }
 
     private func read(_ url: URL, kind: TokenLogParser.Kind) throws -> Cached {

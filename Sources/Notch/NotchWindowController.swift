@@ -448,6 +448,7 @@ final class NotchWindowController {
             statusMessage: snapshot.statusMessage,
             blockMessage: snapshot.block?.summary(now: model.now),
             hasTokenUsage: snapshot.tokenUsage != nil,
+                hasGrokDailyTokens: snapshot.id == "grok",
             hasPlan: snapshot.plan != nil,
             hasResetCredits: snapshot.resetCredits != nil,
             localModelName: snapshot.localModel?.name,

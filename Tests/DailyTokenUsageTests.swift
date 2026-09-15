@@ -215,4 +215,124 @@ final class DailyTokenUsageTests {
         #expect(report.sources.count == 2)
         #expect(report.sources.allSatisfy { $0.eventCount == 0 })
     }
+
+    private func grok(sid: String = "g1", input: Int = 100, output: Int = 20,
+                      read: Int = 60, reasoning: Int = 5, loop: Int = 0,
+                      at: String = "2026-09-14T15:59:00Z") -> String {
+        """
+        {"ts":"\(at)","sid":"\(sid)","msg":"shell.turn.inference_done",
+         "ctx":{"prompt_tokens":\(input),"completion_tokens":\(output),
+         "cached_prompt_tokens":\(read),"reasoning_tokens":\(reasoning),"loop_index":\(loop),"attempts":1}}
+        """.replacingOccurrences(of: "\n", with: "")
+    }
+
+    @Test func testGrokMatchesTokeiTotalWithoutCountingCacheOrReasoningTwice() {
+        let parser = parse([grok()], kind: .grok)
+        #expect(parser.events.values.first?.counts == TokenCounts(input: 40, output: 20, cacheRead: 60, reasoning: 5))
+        #expect(parser.events.values.first?.counts.total == 120)
+        #expect(!parser.incomplete)
+    }
+
+    @Test func testGrokUsesPerCallCountsEvenWhenNextCallIsSmaller() {
+        let parser = parse([grok(), grok(input: 20, output: 10, read: 10, loop: 1)], kind: .grok)
+        #expect(parser.events.values.reduce(0) { $0 + $1.counts.total } == 150)
+        #expect(!parser.incomplete)
+    }
+
+    @Test func testGrokDeduplicatesCopiesButKeepsIndependentCalls() {
+        let parser = parse([grok(), grok(), grok(sid: "g2"), grok(loop: 1),
+                            grok(at: "2026-09-14T16:01:00Z")], kind: .grok)
+        #expect(parser.events.count == 4)
+        #expect(parser.events.values.reduce(0) { $0 + $1.counts.total } == 480)
+    }
+
+    @Test func testGrokOldContextAndTurnSummariesNeverBecomeTokenUsage() {
+        let context = #"{"timestamp":"2026-09-14T15:59:00Z","params":{"_meta":{"totalTokens":999999},"update":{"sessionUpdate":"turn_completed","usage":{"inputTokens":999999,"outputTokens":123}}}}"#
+        let old = #"{"ts":"2026-09-14T15:59:00Z","sid":"g1","msg":"shell.turn.inference_done","ctx":{"loop_index":0}}"#
+        let parser = parse([context, old], kind: .grok)
+        #expect(parser.events.isEmpty)
+        #expect(parser.incomplete)
+    }
+
+    @Test func testGrokInvalidUsageIsPartialRatherThanZero() {
+        let invalid = [grok(input: -1), grok(read: 101), grok(reasoning: 21),
+                       grok().replacingOccurrences(of: "\"prompt_tokens\":100", with: "\"prompt_tokens\":true"),
+                       grok().replacingOccurrences(of: "\"cached_prompt_tokens\":60", with: "\"cached_prompt_tokens\":1.5"),
+                       grok(at: "invalid"), grok(sid: "")]
+        for line in invalid {
+            let parser = parse([line], kind: .grok)
+            #expect(parser.events.isEmpty)
+            #expect(parser.incomplete)
+        }
+    }
+
+    @Test func testGrokMissingOptionalBucketsAndGenuineZeroUsage() {
+        let json = #"{"ts":"2026-09-14T15:59:00Z","sid":"g1","msg":"shell.turn.inference_done","ctx":{"prompt_tokens":0,"completion_tokens":0}}"#
+        let parser = parse([json], kind: .grok)
+        #expect(parser.events.values.first?.counts.total == 0)
+        #expect(!parser.incomplete)
+    }
+
+    @Test func testGrokLocalMidnightRefreshCopiesAndMetadata() async throws {
+        let root = try temporaryDirectory()
+        let logs = root.appendingPathComponent("logs")
+        let backup = root.appendingPathComponent("copy")
+        let session = root.appendingPathComponent("sessions/%2Ftmp%2Fproject/g1")
+        for directory in [logs, backup, session] {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        }
+        let summary = session.appendingPathComponent("summary.json")
+        try #"{"info":{"id":"g1"},"current_model_id":"grok-test"}"#.write(to: summary, atomically: true, encoding: .utf8)
+        let lines = [grok(), grok(input: 200, read: 100, at: "2026-09-14T16:01:00Z")]
+        for directory in [logs, backup] { try write(lines, to: directory, name: "unified") }
+        // A different JSONL file is not an additional source of billing records.
+        try write([grok(sid: "unrelated")], to: logs, name: "updates")
+        let source = TokenLogSource(id: "grok", name: "Grok", kind: .grok, directories: [logs, backup])
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(identifier: "Asia/Shanghai")!
+        let reader = DailyTokenReader()
+        let first = await reader.scan(sources: [source], calendar: calendar)
+        #expect(total(first) == 340)
+        #expect(first.sources[0].days.count == 2)
+        #expect(first.sources[0].events.allSatisfy { $0.model == "grok-test" && $0.project == "/tmp/project" })
+        #expect(first.sources[0].days.values.reduce(0) { $0 + $1.reasoning } == 10)
+        try #"{"info":{"id":"g1"},"current_model_id":"grok-new"}"#.write(to: summary, atomically: true, encoding: .utf8)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+        let next = await reader.scan(sources: [source], calendar: calendar)
+        #expect(total(next) == 340)
+        #expect(next.sources[0].days.count == 1)
+        #expect(next.sources[0].events.allSatisfy { $0.model == "grok-new" })
+    }
+
+    @Test func testGrokPartialAppendTruncationAndDeletion() async throws {
+        let directory = try temporaryDirectory()
+        let file = try write([grok()], to: directory, name: "unified")
+        let reader = DailyTokenReader()
+        let inputs = [source(directory, kind: .grok)]
+        #expect(total(await reader.scan(sources: inputs)) == 120)
+        let next = grok(loop: 1)
+        try (grok() + "\n" + String(next.prefix(30))).write(to: file, atomically: true, encoding: .utf8)
+        let partial = await reader.scan(sources: inputs)
+        #expect(total(partial) == 120)
+        #expect(partial.sources[0].incomplete)
+        try (grok() + "\n" + next).write(to: file, atomically: true, encoding: .utf8)
+        let complete = await reader.scan(sources: inputs)
+        #expect(total(complete) == 240)
+        #expect(!complete.sources[0].incomplete)
+        try "".write(to: file, atomically: true, encoding: .utf8)
+        #expect(total(await reader.scan(sources: inputs)) == 0)
+        try FileManager.default.removeItem(at: file)
+        #expect(total(await reader.scan(sources: inputs)) == 0)
+    }
+
+    @Test func testGrokSourceDiscoveryHonorsHomeOverride() throws {
+        let home = try temporaryDirectory()
+        let defaults = DailyTokenStore.localSources(home: home, environment: [:])
+        #expect(defaults.first { $0.kind == .grok }?.directories == [home.appendingPathComponent(".grok/logs").resolvingSymlinksInPath()])
+        let override = home.appendingPathComponent("custom-grok")
+        let sources = DailyTokenStore.localSources(home: home, environment: ["GROK_HOME": override.path])
+        #expect(sources.filter { $0.kind == .grok }.count == 1)
+        #expect(sources.first { $0.kind == .grok }?.directories == [override.appendingPathComponent("logs").resolvingSymlinksInPath()])
+        #expect(sources.contains { $0.kind == .claude } && sources.contains { $0.kind == .codex })
+    }
 }

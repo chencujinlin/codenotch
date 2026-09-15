@@ -556,6 +556,10 @@ final class NotchViewModel: ObservableObject {
         snapshots.contains { $0.tokenUsage != nil }
     }
 
+    private var hasGrokDailyTokens: Bool {
+        snapshots.contains { $0.id == "grok" }
+    }
+
     private var hasPlan: Bool {
         snapshots.contains { $0.plan != nil }
     }
@@ -568,7 +572,7 @@ final class NotchViewModel: ObservableObject {
         guard screenSize != .zero else { return NotchLayout.defaultSessionCap }
         return NotchLayout.sessionsFitting(cardBudget: cardBudget(cellCount: cellCount),
                                            windowCount: NotchLayout.maxWindowCount,
-                                           hasTokenUsage: hasTokenUsage,
+                                           hasTokenUsage: hasTokenUsage, hasGrokDailyTokens: hasGrokDailyTokens,
                                            hasPlan: hasPlan,
                                            hasResetCredits: hasResetCredits)
     }
@@ -584,6 +588,7 @@ final class NotchViewModel: ObservableObject {
                 statusMessage: snapshot.statusMessage,
                 blockMessage: snapshot.block?.summary(now: now),
                 hasTokenUsage: snapshot.tokenUsage != nil,
+                hasGrokDailyTokens: snapshot.id == "grok",
                 hasPlan: snapshot.plan != nil,
                 hasResetCredits: snapshot.resetCredits != nil,
                 localModelName: snapshot.localModel?.name,
@@ -597,7 +602,7 @@ final class NotchViewModel: ObservableObject {
     func maxCardHeight(cellCount: Int) -> CGFloat {
         let cap = sessionCap(cellCount: cellCount)
         return snapshots.isEmpty
-            ? NotchLayout.maxCardHeight(sessionCap: cap, hasTokenUsage: hasTokenUsage, hasPlan: hasPlan,
+            ? NotchLayout.maxCardHeight(sessionCap: cap, hasTokenUsage: hasTokenUsage, hasGrokDailyTokens: hasGrokDailyTokens, hasPlan: hasPlan,
                                         hasResetCredits: hasResetCredits)
             : contentCardHeight(sessionCap: cap)
     }
