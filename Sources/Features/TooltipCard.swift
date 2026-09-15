@@ -785,14 +785,47 @@ private struct CodexResetCreditsSection: View {
     }
 }
 
-/// Account-wide Codex activity. Unlike the quota rows above, this is sourced
-/// from the Codex profile usage endpoint and is not a local estimate.
+/// Account activity above, local daily consumption below. The local reader
+/// matches the settings page and remains available without profile statistics.
 private struct CodexUsageSection: View {
-    let usage: CodexTokenUsage
+    let usage: CodexTokenUsage?
     let now: Date
 
+    @ObservedObject private var store: DailyTokenStore
+
+    init(usage: CodexTokenUsage?, providerID: String, now: Date) {
+        self.usage = usage
+        self.now = now
+        let slug = CodexProfile.slug(fromProviderID: providerID)
+        let root = CodexProfile.homeDirectory
+            .appendingPathComponent(slug.map { ".codex-\($0)" } ?? ".codex")
+            .resolvingSymlinksInPath().standardizedFileURL
+        self.store = DailyTokenStore.shared(source: TokenLogSource(
+            id: root.path, name: "Codex", kind: .codex,
+            directories: ["sessions", "archived_sessions"].map { root.appendingPathComponent($0) }
+        ))
+    }
+
+    private var hasHistory: Bool { store.report?.sources.contains { $0.eventCount > 0 } == true }
+    private var localStatus: String {
+        guard let report = store.report else { return L10n.t("Loading…") }
+        if report.sources.contains(where: { $0.incomplete || $0.unreadableFiles > 0 }) {
+            return L10n.t("Partial history")
+        }
+        return hasHistory ? L10n.t("This Mac") : L10n.t("No records")
+    }
     private var buckets: [CodexTokenUsage.DailyBucket] {
-        usage.last30Days(now: now)
+        let calendar = store.report?.calendar ?? .current
+        let start = calendar.startOfDay(for: now)
+        return (0..<30).reversed().compactMap { offset in
+            guard let date = calendar.date(byAdding: .day, value: -offset, to: start) else { return nil }
+            return .init(startDate: String(date.timeIntervalSince1970),
+                         tokens: store.report?.totals(on: date).total ?? 0)
+        }
+    }
+
+    private func localTokens(_ count: Int) -> String {
+        hasHistory ? UsageFormat.tokens(count) : "—"
     }
 
     private var maximum: Int {
@@ -800,16 +833,16 @@ private struct CodexUsageSection: View {
     }
 
     private var todayText: String {
-        usage.usageToday(now: now).map { UsageFormat.tokens($0) } ?? L10n.t("Not yet reported")
+        localTokens(store.report?.totals(on: now).total ?? 0)
     }
 
     private var metrics: [CodexMetric] {
-        let summary = usage.summary
+        let summary = usage?.summary
         return [
             CodexMetric(id: "lifetime", value: UsageFormat.tokens(summary?.lifetimeTokens),
-                        label: L10n.t("Lifetime tokens")),
+                        label: L10n.t("Lifetime tokens (account)")),
             CodexMetric(id: "peak", value: UsageFormat.tokens(summary?.peakDailyTokens),
-                        label: L10n.t("Peak tokens")),
+                        label: L10n.t("Peak tokens (account)")),
             CodexMetric(id: "longest", value: UsageFormat.duration(
                 seconds: summary?.longestRunningTurnSeconds), label: L10n.t("Longest chat")),
             CodexMetric(id: "current-streak", value: UsageFormat.days(
@@ -827,6 +860,7 @@ private struct CodexUsageSection: View {
                 .padding(.top, NotchLayout.codexUsageTop)
 
             CodexMetricList(metrics: metrics)
+                .help(L10n.t("Account activity comes from the official profile; daily tokens below come from this Mac's logs."))
                 .padding(.top, NotchLayout.codexMetricTop)
                 .padding(.bottom, NotchLayout.codexMetricBottom)
 
@@ -834,14 +868,23 @@ private struct CodexUsageSection: View {
                 .fill(Palette.ringTrack)
                 .frame(height: NotchLayout.hairline)
 
-            SplitRow(leading: L10n.t("Today (account)"), trailing: todayText)
-                .help(L10n.t("Account statistics may arrive later. See Token usage for today's local log totals."))
+            SplitRow(leading: L10n.t("Local token usage"), trailing: localStatus)
+                .help(L10n.t("Only this Codex profile's local logs are included, including archived sessions. Deleted logs and other devices are not included."))
                 .padding(.top, NotchLayout.blockSpacing)
+            SplitRow(leading: L10n.t("Today"), trailing: todayText)
+                .padding(.top, NotchLayout.codexUsageRowGap)
             SplitRow(leading: L10n.t("30-day tokens"),
-                     trailing: UsageFormat.tokens(usage.usageInLast30Days(now: now)))
+                     trailing: localTokens(buckets.reduce(0) { $0 + $1.tokens }))
                 .padding(.top, NotchLayout.codexUsageRowGap)
             CodexDailyUsageChart(buckets: buckets, maximum: maximum)
                 .padding(.top, NotchLayout.codexChartTop)
+        }
+        .task {
+            await store.refresh()
+            while !Task.isCancelled {
+                do { try await Task.sleep(for: .seconds(30)) } catch { break }
+                await store.refresh()
+            }
         }
     }
 }
@@ -1075,7 +1118,7 @@ struct TooltipCard: View {
             sessionCap: sessionCap,
             statusMessage: snapshot.statusMessage,
             blockMessage: snapshot.block?.summary(now: now),
-            hasTokenUsage: snapshot.tokenUsage != nil,
+            hasTokenUsage: CodexProfile.isCodex(providerID: snapshot.id),
                 hasGrokDailyTokens: snapshot.id == "grok",
             hasPlan: snapshot.plan != nil,
             hasResetCredits: snapshot.resetCredits != nil,
@@ -1100,8 +1143,8 @@ struct TooltipCard: View {
                     if let resetCredits = snapshot.resetCredits {
                         CodexResetCreditsSection(credits: resetCredits, now: now)
                     }
-                    if let tokenUsage = snapshot.tokenUsage {
-                        CodexUsageSection(usage: tokenUsage, now: now)
+                    if CodexProfile.isCodex(providerID: snapshot.id) {
+                        CodexUsageSection(usage: snapshot.tokenUsage, providerID: snapshot.id, now: now)
                     }
                     if snapshot.id == "grok" {
                         GrokDailyUsageSection(now: now)

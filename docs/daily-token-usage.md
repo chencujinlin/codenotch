@@ -12,6 +12,16 @@ Grok logs while visible and refreshes every 30 seconds, independently of billing
 authentication. Loading, absent logs and partial history are labelled explicitly.
 The tooltip, hover area and session budget reserve space for these rows.
 
+The Codex tooltip reads today's total, its 30-day total and chart from the same
+local parser as Settings, scoped to the corresponding `.codex` / `.codex-*`
+profile (including archived sessions). These rows remain available when the
+official profile statistics are absent. The local section shows loading, no
+records or partial history explicitly, refreshes every 30 seconds while visible,
+and retains its in-memory parsed-file cache across hover visits. The lifetime,
+peak, conversation duration and streak metrics above remain account statistics
+from the official profile endpoint; quota percentages and reset credits also
+remain official.
+
 ## Display units
 
 Token statistics use M (one million) below 100,000,000, then 亿 (one hundred

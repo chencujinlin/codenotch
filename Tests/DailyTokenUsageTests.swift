@@ -137,6 +137,28 @@ final class DailyTokenUsageTests {
         report.sources.flatMap { $0.days.values }.reduce(0) { $0 + $1.total }
     }
 
+    @MainActor @Test func testTooltipStoreRetainsReportsAndKeepsProfilesSeparate() async throws {
+        let first = try temporaryDirectory()
+        let second = try temporaryDirectory()
+        let firstSource = TokenLogSource(id: first.path, name: "Codex", kind: .codex, directories: [first])
+        let secondSource = TokenLogSource(id: second.path, name: "Codex work", kind: .codex, directories: [second])
+        _ = try write([codex(input: 100, output: 10)], to: first, name: "session")
+        _ = try write([codex(input: 200, output: 20)], to: second, name: "session")
+        let store = DailyTokenStore.shared(source: firstSource)
+        await store.refresh()
+        let reopened = DailyTokenStore.shared(source: firstSource)
+        #expect(reopened === store)
+        #expect(try total(#require(reopened.report)) == 110)
+        let other = DailyTokenStore.shared(source: secondSource)
+        await other.refresh()
+        #expect(other !== store)
+        #expect(try total(#require(other.report)) == 220)
+        _ = try write([codex(input: 150, output: 20)], to: first, name: "session")
+        await reopened.refresh()
+        #expect(try total(#require(reopened.report)) == 170)
+        #expect(try total(#require(other.report)) == 220)
+    }
+
     @Test func testMidnightUsesLocalCalendarAndRefreshDoesNotDoubleCount() async throws {
         let directory = try temporaryDirectory()
         try write([meta("s"), codex(input: 100, output: 10),

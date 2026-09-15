@@ -553,7 +553,7 @@ final class NotchViewModel: ObservableObject {
     var sessionCap: Int { sessionCap(cellCount: snapshots.count) }
 
     private var hasTokenUsage: Bool {
-        snapshots.contains { $0.tokenUsage != nil }
+        snapshots.contains { CodexProfile.isCodex(providerID: $0.id) }
     }
 
     private var hasGrokDailyTokens: Bool {
@@ -587,7 +587,7 @@ final class NotchViewModel: ObservableObject {
                 sessionCap: sessionCap,
                 statusMessage: snapshot.statusMessage,
                 blockMessage: snapshot.block?.summary(now: now),
-                hasTokenUsage: snapshot.tokenUsage != nil,
+                hasTokenUsage: CodexProfile.isCodex(providerID: snapshot.id),
                 hasGrokDailyTokens: snapshot.id == "grok",
                 hasPlan: snapshot.plan != nil,
                 hasResetCredits: snapshot.resetCredits != nil,

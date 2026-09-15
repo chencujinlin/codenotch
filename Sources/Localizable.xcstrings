@@ -20672,6 +20672,50 @@
           }
         }
       }
+    },
+    "Lifetime tokens (account)": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "账号累计 token"
+          }
+        }
+      }
+    },
+    "Peak tokens (account)": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "账号峰值 token"
+          }
+        }
+      }
+    },
+    "Account activity comes from the official profile; daily tokens below come from this Mac's logs.": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "累计、峰值、对话时长和连续天数来自官方账号统计；下方每日 Token 来自本机日志。"
+          }
+        }
+      }
+    },
+    "Only this Codex profile's local logs are included, including archived sessions. Deleted logs and other devices are not included.": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "仅统计当前 Codex 配置的本机日志（含归档会话），不包含已删除日志及其他设备的消耗。"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

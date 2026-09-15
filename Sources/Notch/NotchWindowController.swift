@@ -447,7 +447,7 @@ final class NotchWindowController {
             sessionCap: model.sessionCap,
             statusMessage: snapshot.statusMessage,
             blockMessage: snapshot.block?.summary(now: model.now),
-            hasTokenUsage: snapshot.tokenUsage != nil,
+            hasTokenUsage: CodexProfile.isCodex(providerID: snapshot.id),
                 hasGrokDailyTokens: snapshot.id == "grok",
             hasPlan: snapshot.plan != nil,
             hasResetCredits: snapshot.resetCredits != nil,

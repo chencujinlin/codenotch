@@ -12,6 +12,17 @@ final class DailyTokenStore: ObservableObject {
         self.sources = sources
     }
 
+    // Keep the parsed-file cache across short hover visits. A fresh reader on
+    // every hover would repeatedly scan years of Codex history.
+    private static var sourceStores: [String: DailyTokenStore] = [:]
+
+    static func shared(source: TokenLogSource) -> DailyTokenStore {
+        if let store = sourceStores[source.id] { return store }
+        let store = DailyTokenStore(sources: [source])
+        sourceStores[source.id] = store
+        return store
+    }
+
     func refresh() async {
         guard !isRefreshing else { return }
         isRefreshing = true
