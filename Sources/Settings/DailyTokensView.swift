@@ -22,7 +22,7 @@ struct DailyTokensView: View {
         store.report?.totals(on: date, sourceID: sourceID.isEmpty ? nil : sourceID) ?? TokenCounts()
     }
     private func number(_ value: Int) -> String {
-        value.formatted(.number.locale(L10n.locale))
+        TokenCountFormat.string(value, locale: L10n.locale)
     }
     private func dateText(_ date: Date) -> String {
         date.formatted(.dateTime.month(.twoDigits).day(.twoDigits).locale(L10n.locale))
@@ -137,7 +137,7 @@ struct DailyTokensView: View {
                 AxisMarks { value in
                     AxisGridLine()
                     AxisValueLabel {
-                        if let tokens = value.as(Int.self) { Text(LimitWindow.compact(tokens)) }
+                        if let tokens = value.as(Int.self) { Text(number(tokens)) }
                     }
                 }
             }

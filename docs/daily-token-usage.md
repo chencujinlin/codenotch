@@ -12,6 +12,14 @@ Grok logs while visible and refreshes every 30 seconds, independently of billing
 authentication. Loading, absent logs and partial history are labelled explicitly.
 The tooltip, hover area and session budget reserve space for these rows.
 
+## Display units
+
+Token statistics use M (one million) below 100,000,000, then 亿 (one hundred
+million) from that threshold onward, with up to two fractional digits. A positive
+count below 10,000 displays as `<0.01M`; zero displays as `0M`. Near the threshold,
+M is capped at `99.99M` so rounding cannot show `100M` below the switch. These are
+display rules only: aggregation and chart coordinates retain the original counts.
+
 ## Accounting
 
 - Claude: `message.usage.input_tokens`, `output_tokens`,

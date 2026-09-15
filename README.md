@@ -48,7 +48,7 @@ See our [release notes](https://github.com/chencujinlin/codenotch/releases/lates
 
 For releases maintained by the original author, visit
 [vinzdg/codenotch Releases](https://github.com/vinzdg/codenotch/releases).
-The Grok ring tooltip also shows local daily Token details and a 30-day trend beneath the weekly quota.
+The Grok ring tooltip also shows local daily Token details and a 30-day trend beneath the weekly quota. Token counts use M below 100 million, then 亿 (100 million), with up to two decimal places; accounting retains the original counts.
 
 The sections below describe the inherited application; the custom daily Token
 feature is documented in the [Chinese guide](README.zh-CN.md) and

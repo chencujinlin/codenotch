@@ -66,7 +66,7 @@ def prepare_token_tests():
         if target.exists():
             shutil.rmtree(target)
         target.mkdir()
-    for name in ("DailyTokenUsage.swift", "DailyTokenStore.swift"):
+    for name in ("DailyTokenUsage.swift", "DailyTokenStore.swift", "TokenCountFormat.swift"):
         shutil.copy2(ROOT / "Sources/Model" / name, WORK / "Sources" / name)
     shutil.copy2(ROOT / "Tests/DailyTokenUsageTests.swift", WORK / "Tests/DailyTokenUsageTests.swift")
     (WORK / "Package.swift").write_text('''// swift-tools-version: 6.0

@@ -5,6 +5,16 @@ import Testing
 @Suite
 final class DailyTokenUsageTests {
     private var temporaryDirectories: [URL] = []
+    @Test func testTokenDisplayUsesMillionsAndSwitchesAtOneHundredMillion() {
+        let locale = Locale(identifier: "en_US_POSIX")
+        for (value, text) in [(0, "0M"), (1, "<0.01M"), (9_999, "<0.01M"),
+                              (10_000, "0.01M"), (1_000_000, "1M"),
+                              (15_231_987, "15.23M"), (99_999_999, "99.99M"),
+                              (100_000_000, "1亿"), (127_835_318, "1.28亿"),
+                              (1_000_000_000, "10亿")] {
+            #expect(TokenCountFormat.string(value, locale: locale) == text)
+        }
+    }
     deinit { for directory in temporaryDirectories { try? FileManager.default.removeItem(at: directory) } }
     private func claude(id: String? = "m1", request: String = "r1", input: Int = 10,
                         output: Int = 5, read: Int = 20, write: Int = 30,

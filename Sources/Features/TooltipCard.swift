@@ -635,19 +635,7 @@ private struct RuntimeModelDetails: View {
 enum UsageFormat {
     static func tokens(_ value: Int?) -> String {
         guard let value else { return "—" }
-        switch value {
-        case 1_000_000_000...:
-            return String(format: "%.2fB", locale: Locale(identifier: "en_US_POSIX"),
-                          Double(value) / 1_000_000_000)
-        case 1_000_000...:
-            return String(format: "%.1fM", locale: Locale(identifier: "en_US_POSIX"),
-                          Double(value) / 1_000_000)
-        case 1_000...:
-            return String(format: "%.0fK", locale: Locale(identifier: "en_US_POSIX"),
-                          Double(value) / 1_000)
-        default:
-            return "\(value)"
-        }
+        return TokenCountFormat.string(value, locale: L10n.locale)
     }
 
     static func duration(seconds: Double?) -> String {
@@ -888,7 +876,7 @@ private struct GrokDailyUsageSection: View {
         return hasHistory ? L10n.t("This Mac") : L10n.t("No records")
     }
     private func tokens(_ value: Int) -> String {
-        hasHistory ? value.formatted(.number.locale(L10n.locale)) : "—"
+        hasHistory ? TokenCountFormat.string(value, locale: L10n.locale) : "—"
     }
 
     var body: some View {
