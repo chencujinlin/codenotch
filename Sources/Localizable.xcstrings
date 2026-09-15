@@ -20617,6 +20617,61 @@
           }
         }
       }
+    },
+    "Not yet reported": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "官方尚未更新"
+          }
+        }
+      }
+    },
+    "Today (account)": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "今日（账号）"
+          }
+        }
+      }
+    },
+    "Account statistics may arrive later. See Token usage for today's local log totals.": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "官方账号统计可能延迟更新。本机今日统计可在“Token 用量”页面查看。"
+          }
+        }
+      }
+    },
+    "Show code review": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "显示代码审查额度"
+          }
+        }
+      }
+    },
+    "The ring still follows the main Codex window. Code review stays in the hover card.": {
+      "extractionState": "manual",
+      "localizations": {
+        "zh-Hans": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "圆环仍显示 Codex 的主要额度窗口。代码审查额度显示在悬浮卡片中。"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

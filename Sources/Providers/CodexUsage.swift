@@ -276,7 +276,7 @@ enum CodexUsage {
     }
 
     static func windows(from data: Data, now: Date = Date(),
-                        includeExtras: Bool = true) throws -> [LimitWindow] {
+                        includeExtras: Bool = true, includeSpark: Bool = false) throws -> [LimitWindow] {
         let response: Response
         do {
             response = try JSONDecoder().decode(Response.self, from: data)
@@ -301,7 +301,7 @@ enum CodexUsage {
         // all key windows by id, and a duplicate 5h row is what reads as a
         // second session limit.
         if includeExtras {
-            for extra in response.additional_rate_limits where isSpark(extra) {
+            for extra in response.additional_rate_limits where includeSpark && isSpark(extra) {
                 appendExtra(
                     extra.rate_limit,
                     primaryID: "spark",

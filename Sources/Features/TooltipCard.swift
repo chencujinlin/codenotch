@@ -800,7 +800,7 @@ private struct CodexUsageSection: View {
     }
 
     private var todayText: String {
-        usage.usageToday(now: now).map { UsageFormat.tokens($0) } ?? L10n.t("Pending")
+        usage.usageToday(now: now).map { UsageFormat.tokens($0) } ?? L10n.t("Not yet reported")
     }
 
     private var metrics: [CodexMetric] {
@@ -834,7 +834,8 @@ private struct CodexUsageSection: View {
                 .fill(Palette.ringTrack)
                 .frame(height: NotchLayout.hairline)
 
-            SplitRow(leading: L10n.t("Today"), trailing: todayText)
+            SplitRow(leading: L10n.t("Today (account)"), trailing: todayText)
+                .help(L10n.t("Account statistics may arrive later. See Token usage for today's local log totals."))
                 .padding(.top, NotchLayout.blockSpacing)
             SplitRow(leading: L10n.t("30-day tokens"),
                      trailing: UsageFormat.tokens(usage.usageInLast30Days(now: now)))

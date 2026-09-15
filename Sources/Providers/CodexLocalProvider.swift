@@ -70,7 +70,7 @@ actor CodexLocalProvider: UsageProvider {
             throw UsageProviderError.badResponse(status: status)
         }
 
-        // Unused resets are a separate endpoint from the extra Spark / code-review
+        // Unused resets are a separate endpoint from the extra code-review
         // windows. Start that fetch before parsing extras so a slow or empty
         // extras payload cannot skip the credits row.
         async let resetCredits = Self.fetchResetCredits(session: session, credential: credential)

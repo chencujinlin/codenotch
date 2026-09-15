@@ -25,15 +25,14 @@ final class CodexUsageArchiveTests: XCTestCase {
         return UsageArchive(defaults: defaults).load()[snapshot.id]?.snapshot
     }
 
-    /// Spark is a live quota, not leftover rollout data. Reloading it after
-    /// a relaunch is the archive's job.
-    func testAnArchivedSparkWindowSurvivesRelaunch() {
+    /// A relaunch must not restore the removed Spark section.
+    func testAnArchivedSparkWindowIsRemovedOnRelaunch() {
         let restored = roundTrip(snapshot(windows: [
             LimitWindow(id: "primary", label: "5h limit", usedFraction: 0.2),
             LimitWindow(id: "spark", label: "Spark", usedFraction: 0.5)
         ]))
-        XCTAssertEqual(restored?.windows.map(\.id), ["primary", "spark"])
-        XCTAssertEqual(restored?.windows.last?.usedFraction, 0.5)
+        XCTAssertEqual(restored?.windows.map(\.id), ["primary"])
+        XCTAssertEqual(restored?.windows.last?.usedFraction, 0.2)
     }
 
     /// Old rollout quota ids are gone from the live provider. Restoring them
@@ -44,14 +43,13 @@ final class CodexUsageArchiveTests: XCTestCase {
         ])))
     }
 
-    /// A leftover rollout quota must not take a live Spark reading with it.
-    func testASparkWindowSurvivesBesideAStrippedRolloutQuota() {
+    /// An archive with only hidden windows must not restore an empty card.
+    func testSparkAndRetiredRolloutWindowsAreBothRemoved() {
         let restored = roundTrip(snapshot(windows: [
             LimitWindow(id: "spark", label: "Spark", usedFraction: 0.5),
             LimitWindow(id: "rollout-foo", label: "Rollout", usedFraction: 0.9)
         ]))
-        XCTAssertEqual(restored?.windows.map(\.id), ["spark"])
-        XCTAssertEqual(restored?.windows.first?.usedFraction, 0.5)
+        XCTAssertNil(restored)
     }
 
     func testLiveWindowsOnAnExtraProfileSurviveAndUnknownOnesDoNot() {
@@ -63,7 +61,7 @@ final class CodexUsageArchiveTests: XCTestCase {
                         usedFraction: 0.4)
         ]))
         XCTAssertEqual(spark?.windows.map(\.id),
-                       ["spark-secondary", "code-review", "code-review-secondary"])
+                       ["code-review", "code-review-secondary"])
 
         let mixed = roundTrip(snapshot(id: work, windows: [
             LimitWindow(id: "primary", label: "5h limit", usedFraction: 0.2),

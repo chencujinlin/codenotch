@@ -4,7 +4,7 @@ import XCTest
 
 final class CodexUsageTests: XCTestCase {
     private func windows(_ json: String) throws -> [LimitWindow] {
-        try CodexUsage.windows(from: Data(json.utf8), now: Date(timeIntervalSince1970: 1_800_000_000))
+        try CodexUsage.windows(from: Data(json.utf8), now: Date(timeIntervalSince1970: 1_800_000_000), includeSpark: true)
     }
 
     func testBothWindowsAreReadWhenBothArePresent() throws {
@@ -345,6 +345,23 @@ final class CodexUsageTests: XCTestCase {
               "primary_window":{"used_percent":40,"limit_window_seconds":18000}}}]}
             """.utf8), includeExtras: false
         ))
+    }
+
+    func testSparkIsHiddenByDefaultWhileCodeReviewRemains() throws {
+        let data = Data("""
+        {"rate_limit":{"primary_window":{"used_percent":25}},
+         "additional_rate_limits":[
+           {"limit_name":"Spark","rate_limit":{"primary_window":{"used_percent":40}}},
+           {"metered_feature":"gpt-5.3-codex-spark","rate_limit":{
+             "secondary_window":{"used_percent":12}}}],
+         "code_review_rate_limit":{"primary_window":{"used_percent":90}}}
+        """.utf8)
+        XCTAssertEqual(try CodexUsage.windows(from: data).map(\.id),
+                       ["primary", "code-review"])
+        XCTAssertThrowsError(try CodexUsage.windows(from: Data("""
+        {"additional_rate_limits":[{"limit_name":"Spark","rate_limit":{
+          "primary_window":{"used_percent":40}}}]}
+        """.utf8)))
     }
 
     func testDecodesProfileTokenUsageAndBuildsAThirtyDaySeries() throws {

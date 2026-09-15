@@ -191,7 +191,7 @@ final class Preferences: ObservableObject {
         didSet { defaults.set(claudeDailyPaceRing, forKey: Keys.claudeDailyPaceRing) }
     }
 
-    /// Whether Spark and code-review Codex windows appear in the hover card.
+    /// Whether code-review Codex windows appear in the hover card.
     /// On by default so a first launch shows them; the ring still follows
     /// the main Codex window either way.
     @Published var showCodexExtraLimits: Bool {

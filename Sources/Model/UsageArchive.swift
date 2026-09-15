@@ -74,10 +74,8 @@ struct UsageArchive {
 
         var result: [String: (snapshot: ProviderSnapshot, fetchedAt: Date)] = [:]
         for entry in entries {
-            // Spark and code-review are live windows. Older Codex readings also
-            // carried rollout quotas the provider no longer displays. Strip
-            // those leftovers rather than discarding a Spark snapshot — and
-            // do it for every Codex profile, not only the default.
+            // Strip hidden Spark and retired rollout windows on every Codex
+            // profile so an offline launch cannot restore removed quota rows.
             let windows: [LimitWindow]
             if CodexProfile.isCodex(providerID: entry.id) {
                 windows = entry.windows.filter { Self.isLiveCodexWindow($0.id) }
@@ -105,7 +103,6 @@ struct UsageArchive {
     /// Window ids the live Codex provider still displays.
     private static func isLiveCodexWindow(_ id: String) -> Bool {
         id == "primary" || id == "secondary"
-            || id.hasPrefix("spark")
             || id.hasPrefix("code-review")
     }
 
